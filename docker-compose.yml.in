@@ -1,0 +1,42 @@
+version: '2'
+services:
+  editor:
+    image: swisstopo/service-maputnik-editor:${image_tag}
+% if rancher_deploy == 'false':
+    build: ./apps/editor
+% endif
+    ports:
+      - "8010:8010"
+    command: npm start -- --host 0.0.0.0 --port 8010
+% if ci == 'false':
+    network_mode: 'host'
+% endif
+    labels:
+      io.rancher.scheduler.affinity:host_label: application=tod,staging=dev
+      io.rancher.container.pull_image: always
+      io.rancher.scheduler.global: 'true'
+  gatekeeper:
+    image: swisstopo/service-maputnik-gatekeeper:${image_tag}
+% if rancher_deploy == 'false':
+    build: ./apps/gatekeeper
+% endif
+    environment:
+      OAUTH_CLIENT_ID: ${gk_oauth_client_id}
+      OAUTH_CLIENT_SECRET: ${gk_oauth_client_secret}
+    ports:
+      - "8011:8011"
+    command: sh -c "node index.js"
+% if ci == 'false':
+    network_mode: 'host'
+% endif
+    labels:
+      io.rancher.scheduler.affinity:host_label: application=tod,staging=dev
+      io.rancher.container.pull_image: always
+      io.rancher.scheduler.global: 'true'
+% if rancher_deploy == 'false':
+  haproxy:    
+    build:    
+      dockerfile: Dockerfile   
+      context: ./config/haproxy
+% endif
+
