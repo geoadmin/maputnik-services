@@ -8,7 +8,6 @@ CURRENT_DIR = $(shell pwd)
 PYTHON_DIR = .venv
 NODE_DIR = node_modules
 SUBMODULE_DIR = tileserver-gl
-MAPUTNIK_ROOT = ${CURRENT_DIR}/maputnik-editor
 MAKO_CMD = ${PYTHON_DIR}/bin/mako-render
 PIP_CMD = ${PYTHON_DIR}/bin/pip
 
@@ -26,10 +25,10 @@ help:
 	@echo ""
 
 .PHONY: user
-user: editor gatekeeper
+user: ${PYTHON_DIR}/requirements.timestamp editor gatekeeper
 
 .PHONY: dockerbuild
-dockerbuild:
+dockerbuild: 
 	export RANCHER_DEPLOY=false && make docker-compose.yml && docker-compose build
 
 .PHONY: dockerrun
@@ -37,11 +36,11 @@ dockerrun:
 	export RANCHER_DEPLOY=false && make docker-compose.yml && docker-compose up -d
 
 .PHONY: rancherdeploydev
-rancherdeploydev: guard-RANCHER_ACCESS_KEY \
-                  guard-RANCHER_SECRET_KEY \
-                  guard-RANCHER_URL
+rancherdeploydev: guard-RANCHER_ACCESS_KEY_DEV \
+                  guard-RANCHER_SECRET_KEY_DEV \
+                  guard-RANCHER_URL_DEV
 	export RANCHER_DEPLOY=true && make docker-compose.yml
-	$(call start_service,$(RANCHER_ACCESS_KEY),$(RANCHER_SECRET_KEY),$(RANCHER_URL),dev)
+	$(call start_service,$(RANCHER_ACCESS_KEY_DEV),$(RANCHER_SECRET_KEY_DEV),$(RANCHER_URL_DEV),dev)
 
 .PHONY: dockerpurge
 dockerpurge:
@@ -49,34 +48,40 @@ dockerpurge:
 		sudo docker rm -f $(shell sudo docker ps -a -q --filter name=servicemaputnik); \
 	fi
 	@if test "$(shell docker images -q swisstopo/service-maputnik-editor)" != ""; then \
-		sudo docker rmi -f swisstopo/service-maputnik-editor:latest; \
+		sudo docker rmi -f swisstopo/service-maputnik-editor:staging; \
 	fi
 	@if test "$(shell docker images -q swisstopo/service-maputnik-gatekeeper)" != ""; then \
-		sudo docker rmi -f swisstopo/service-maputnik-gatekeeper:latest; \
+		sudo docker rmi -f swisstopo/service-maputnik-gatekeeper:staging; \
 	fi
-	@if test "$(shell docker images -q swisstopo/service-maputnik-haproxy)" != ""; then \
-		sudo docker rmi -f swisstopo/service-maputnik-haproxy:latest; \
+	@if test "$(shell docker images -q service-maputnik_haproxy)" != ""; then \
+		sudo docker rmi -f service-maputnik_haproxy; \
 	fi
-#${PYTHON_DIR}:
-#	virtualenv ${PYTHON_DIR}
 
-#${PYTHON_DIR}/requirements.timestamp: ${PYTHON_DIR} requirements.txt
-#	${PIP_CMD} install -r requirements.txt
-#	touch $@
+${PYTHON_DIR}:
+	virtualenv ${PYTHON_DIR}
+
+${PYTHON_DIR}/requirements.timestamp: ${PYTHON_DIR} requirements.txt
+	${PIP_CMD} install -r requirements.txt
+	touch $@
 
 #${NODE_DIR}/package.timestamp: package.json
 #	npm install
 #	touch $@
 
-#docker-compose.yml::
-#	source rc_user && ${MAKO_CMD} --var "rancher_deploy=${RANCHER_DEPLOY}" --var "ci=${CI}" --var "image_tag=${IMAGE_TAG}" docker-compose.yml.in > $@
-
-#nginx/nginx.conf::
-#	source rc_user && ${MAKO_CMD} --var "maputnik_root=${MAPUTNIK_ROOT}" nginx/nginx.conf.in > $@
+docker-compose.yml: guard-GK_OAUTH_CLIENT_ID \
+                    guard-GK_OAUTH_CLIENT_SECRET
+	source rc_user && ${MAKO_CMD} \
+	       --var "rancher_deploy=${RANCHER_DEPLOY}" \
+	       --var "ci=${CI}" \
+	       --var "image_tag=${IMAGE_TAG}" \
+	       --var "gk_oauth_client_id=${GK_OAUTH_CLIENT_ID}" \
+	       --var "gk_oauth_client_secret=${GK_OAUTH_CLIENT_SECRET}" \
+	       --var "image_tag=${IMAGE_TAG}" \
+	       docker-compose.yml.in > $@
 
 define start_service
-	rancher --access-key $1 --secret-key $2 --url $3 rm --stop --type stack service-maputnik-$4 || echo "Nothing to remove"
-	rancher --access-key $1 --secret-key $2 --url $3 up --stack service-maputnik-$4 --pull --force-upgrade --confirm-upgrade -d
+	#rancher --access-key $1 --secret-key $2 --url $3 rm --stop --type stack service-tileservergl-$4 || echo "Nothing to remove"
+	rancher --access-key $1 --secret-key $2 --url $3 up --stack service-tileservergl-$4 --pull --force-upgrade --confirm-upgrade -d
 endef
 
 guard-%:
@@ -98,9 +103,10 @@ gatekeeper:
 
 .PHONY: clean
 clean:
-	#rm -f docker-compose.yml
+	rm -f docker-compose.yml
 
 .PHONY: cleanall
 cleanall: clean
+	rm -rf ${PYTHON_DIR}
 	rm -rf apps/editor/${NODE_DIR}
 	rm -rf apps/gatekeeper/${NODE_DIR}
