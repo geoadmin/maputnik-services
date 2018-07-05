@@ -48,13 +48,13 @@ dockerpurge:
 		sudo docker rm -f $(shell sudo docker ps -a -q --filter name=servicemaputnik); \
 	fi
 	@if test "$(shell docker images -q swisstopo/service-maputnik-editor)" != ""; then \
-		sudo docker rmi -f swisstopo/service-maputnik-editor:latest; \
+		sudo docker rmi -f swisstopo/service-maputnik-editor:staging; \
 	fi
 	@if test "$(shell docker images -q swisstopo/service-maputnik-gatekeeper)" != ""; then \
-		sudo docker rmi -f swisstopo/service-maputnik-gatekeeper:latest; \
+		sudo docker rmi -f swisstopo/service-maputnik-gatekeeper:staging; \
 	fi
-	@if test "$(shell docker images -q swisstopo/service-maputnik-haproxy)" != ""; then \
-		sudo docker rmi -f swisstopo/service-maputnik-haproxy:latest; \
+	@if test "$(shell docker images -q service-maputnik_haproxy)" != ""; then \
+		sudo docker rmi -f service-maputnik_haproxy; \
 	fi
 
 ${PYTHON_DIR}:
