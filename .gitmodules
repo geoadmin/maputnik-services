@@ -1,8 +1,8 @@
 [submodule "apps/gatekeeper"]
 	path = apps/gatekeeper
-	url = https://github.com/prose/gatekeeper.git
+	url = https://github.com/geoadmin/service-gatekeeper.git
 	branch = development
 [submodule "apps/editor"]
 	path = apps/editor
-	url = git@github.com:geoadmin/editor
+	url = git@github.com:geoadmin/web-maputnik-editor
 	branch = master
