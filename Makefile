@@ -81,7 +81,7 @@ docker-compose.yml: guard-GK_OAUTH_CLIENT_ID \
 
 define start_service
 	#rancher --access-key $1 --secret-key $2 --url $3 rm --stop --type stack service-tileservergl-$4 || echo "Nothing to remove"
-	rancher --access-key $1 --secret-key $2 --url $3 up --stack service-tileservergl-$4 --pull --force-upgrade --confirm-upgrade -d
+	rancher --access-key $1 --secret-key $2 --url $3 up --stack service-maputnik-$4 --pull --force-upgrade --confirm-upgrade -d
 endef
 
 guard-%:
